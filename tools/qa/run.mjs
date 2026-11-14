@@ -297,7 +297,7 @@ async function runA(browser) {
   }));
   check(de.title === "Noch da?", `(8) German title: "${de.title}"`);
   check(
-    /^Seit einiger Zeit war niemand aktiv\. Die Welt wird in \d+ Sekunden geschlossen\.$/.test(
+    /^Seit einiger Zeit war niemand aktiv\. Die Welt wird in \d+ Sekunden geschlossen\. Eine Mausbewegung oder Taste genügt, um zu bleiben\.$/.test(
       de.text ?? "",
     ),
     `(8) German text: "${de.text}"`,

@@ -22,8 +22,8 @@
     },
     "Dialog": {
       "Title": "Noch da?",
-      "Body": "Seit einiger Zeit war niemand aktiv. Die Welt wird in {seconds} Sekunden geschlossen.",
-      "BodyLogout": "Seit einiger Zeit war niemand aktiv. Alle werden in {seconds} Sekunden abgemeldet.",
+      "Body": "Seit einiger Zeit war niemand aktiv. Die Welt wird in {seconds} Sekunden geschlossen. Eine Mausbewegung oder Taste genügt, um zu bleiben.",
+      "BodyLogout": "Seit einiger Zeit war niemand aktiv. Alle werden in {seconds} Sekunden abgemeldet. Eine Mausbewegung oder Taste genügt, um zu bleiben.",
       "Here": "Ich bin da"
     }
   }

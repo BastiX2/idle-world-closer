@@ -22,8 +22,8 @@
     },
     "Dialog": {
       "Title": "Still there?",
-      "Body": "Nobody has been active for a while. The world closes in {seconds} seconds.",
-      "BodyLogout": "Nobody has been active for a while. Everyone is logged out in {seconds} seconds.",
+      "Body": "Nobody has been active for a while. The world closes in {seconds} seconds. Move the mouse or press any key to stay.",
+      "BodyLogout": "Nobody has been active for a while. Everyone is logged out in {seconds} seconds. Move the mouse or press any key to stay.",
       "Here": "I'm here"
     }
   }
