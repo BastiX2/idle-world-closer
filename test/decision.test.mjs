@@ -3,8 +3,11 @@ import {
   activeSince,
   allIdle,
   endAction,
+  isClockJump,
   isResume,
   lastInputFromReport,
+  MAX_TICK_GAP_MS,
+  parseMessage,
   secondsLeft,
   timings,
 } from "../scripts/decision.mjs";
@@ -113,5 +116,53 @@ describe("timings", () => {
       countdownMs: 60_000,
       shareMs: 60_000,
     });
+  });
+});
+
+describe("isClockJump", () => {
+  it("accepts normal and throttled ticks", () => {
+    expect(isClockJump(1000, 2000)).toBe(false);
+    expect(isClockJump(0, 60_000)).toBe(false);
+  });
+  it("detects sleep and a clock set backwards", () => {
+    expect(isClockJump(0, MAX_TICK_GAP_MS + 1)).toBe(true);
+    expect(isClockJump(5000, 4000)).toBe(true);
+    expect(isClockJump(0, 50, 10)).toBe(true);
+  });
+});
+
+describe("parseMessage", () => {
+  it("accepts reports", () => {
+    expect(parseMessage({ type: "state", userId: "u", idleMs: 5 })).toEqual({
+      type: "state",
+      userId: "u",
+      idleMs: 5,
+    });
+    expect(parseMessage({ type: "active", userId: "u" })).toEqual({
+      type: "active",
+      userId: "u",
+      idleMs: 0,
+    });
+  });
+  it("clamps negative idle times", () => {
+    expect(parseMessage({ type: "state", userId: "u", idleMs: -9 }).idleMs).toBe(0);
+  });
+  it("ignores everything else", () => {
+    for (const bad of [
+      null,
+      undefined,
+      "x",
+      42,
+      {},
+      { type: "ping", userId: "u" },
+      { type: "state" },
+      { type: "state", userId: "" },
+      { type: "state", userId: 5 },
+      { type: "state", userId: "u", idleMs: "5" },
+      { type: "state", userId: "u", idleMs: NaN },
+      { type: "state", userId: "u", idleMs: Infinity },
+    ]) {
+      expect(parseMessage(bad)).toBeNull();
+    }
   });
 });
