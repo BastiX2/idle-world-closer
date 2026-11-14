@@ -1,0 +1,30 @@
+{
+  "IDLE-WORLD-CLOSER": {
+    "Settings": {
+      "Enabled": {
+        "Name": "Leere Welt schließen",
+        "Hint": "Hauptschalter. Waren alle Verbundenen lange genug untätig, läuft ein Countdown, danach wird die Welt geschlossen."
+      },
+      "Minutes": {
+        "Name": "Minuten Untätigkeit",
+        "Hint": "Minuten ohne jede Eingabe (Maus, Tastatur, Touch) aller verbundenen Benutzer, bevor der Countdown startet."
+      },
+      "Countdown": {
+        "Name": "Countdown in Sekunden",
+        "Hint": "So lange zählt der Dialog \"Noch da?\" herunter, bevor die Welt geschlossen wird."
+      },
+      "Action": {
+        "Name": "Wenn der Countdown abläuft",
+        "Hint": "Ist ein Spielleiter verbunden, handelt nur dessen Client. Ohne Spielleiter werden alle abgemeldet, und ein serverseitiger Wächter (falls vorhanden) schließt die Welt.",
+        "Close": "Welt schließen (zurück zum Setup)",
+        "Logout": "Nur alle abmelden"
+      }
+    },
+    "Dialog": {
+      "Title": "Noch da?",
+      "Body": "Seit einiger Zeit war niemand aktiv. Die Welt wird in {seconds} Sekunden geschlossen.",
+      "BodyLogout": "Seit einiger Zeit war niemand aktiv. Alle werden in {seconds} Sekunden abgemeldet.",
+      "Here": "Ich bin da"
+    }
+  }
+}

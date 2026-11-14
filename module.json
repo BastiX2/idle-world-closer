@@ -1,0 +1,15 @@
+{
+  "id": "idle-world-closer",
+  "title": "Idle World Closer",
+  "description": "Closes an idle world: when nobody has touched their keyboard or mouse for a while, everyone gets a countdown, then the GM's client shuts the world down (or players are logged out).",
+  "version": "0.1.0",
+  "compatibility": { "minimum": "14", "verified": "14" },
+  "authors": [{ "name": "BastiX2" }],
+  "license": "MIT",
+  "esmodules": ["scripts/main.mjs"],
+  "languages": [
+    { "lang": "en", "name": "English", "path": "lang/en.json" },
+    { "lang": "de", "name": "Deutsch", "path": "lang/de.json" }
+  ],
+  "socket": true
+}
