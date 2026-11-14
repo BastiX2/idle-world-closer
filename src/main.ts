@@ -4,6 +4,8 @@
  * active GM's client shuts the world down (or everybody logs out).
  */
 import {
+  ACTION_HINT_SETTINGS,
+  actionHintKey,
   allIdle,
   endAction,
   isClockJump,
@@ -264,6 +266,28 @@ Hooks.once("init", () => {
     default: {},
   });
 });
+
+/**
+ * In the settings window the action setting's hint follows its dropdown live, before saving
+ * (the user's texts: one for closing the world, one for logging everybody out).
+ */
+function bindActionHints(root: HTMLElement): void {
+  const select = root.querySelector<HTMLSelectElement>(`select[name="${ID}.action"]`);
+  if (!select) return;
+  const update = (): void => {
+    for (const setting of Object.keys(
+      ACTION_HINT_SETTINGS,
+    ) as (keyof typeof ACTION_HINT_SETTINGS)[]) {
+      const field = root.querySelector(`[name="${ID}.${setting}"]`);
+      const hint = field?.closest(".form-group")?.querySelector(".hint");
+      if (hint) hint.textContent = game.i18n.localize(actionHintKey(setting, select.value));
+    }
+  };
+  select.addEventListener("change", update);
+  update();
+}
+
+Hooks.on("renderSettingsConfig", (_app: unknown, element: HTMLElement) => bindActionHints(element));
 
 Hooks.once("ready", () => {
   game.socket.on(SOCKET, onMessage);

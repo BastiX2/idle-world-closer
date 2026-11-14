@@ -3,7 +3,7 @@
     "Settings": {
       "Enabled": {
         "Name": "Leere Welt schließen",
-        "Hint": "Hauptschalter. Waren alle Verbundenen lange genug untätig, läuft ein Countdown, danach wird die Welt geschlossen."
+        "Hint": "Hauptschalter. Waren alle verbundenen Spieler lange genug untätig, startet ein Countdown, danach wird die Welt geschlossen."
       },
       "Minutes": {
         "Name": "Minuten Untätigkeit",
@@ -11,11 +11,12 @@
       },
       "Countdown": {
         "Name": "Countdown in Sekunden",
-        "Hint": "So lange zählt der Dialog \"Noch da?\" herunter, bevor die Welt geschlossen wird."
+        "Hint": "So lange zählt der Countdown-Dialog \"Noch da?\" herunter, bevor die Welt geschlossen wird."
       },
       "Action": {
         "Name": "Wenn der Countdown abläuft",
-        "Hint": "Ist ein Spielleiter verbunden, handelt nur dessen Client. Ohne Spielleiter werden alle abgemeldet, und ein serverseitiger Wächter (falls vorhanden) schließt die Welt.",
+        "Hint": "Ist ein Spielleiter verbunden, wird über ihn die Welt geschlossen. Ohne Spielleiter werden alle verbundenen Spieler abgemeldet (wie Abmelden).",
+        "HintLogout": "Alle verbundenen Spieler werden abgemeldet.",
         "Close": "Welt schließen (zurück zum Setup)",
         "Logout": "Nur alle abmelden"
       }

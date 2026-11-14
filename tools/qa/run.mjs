@@ -309,6 +309,28 @@ async function runA(browser) {
   );
   check(en === "Still there?", `(8) the English client still shows "${en}"`);
 
+  // The action hint follows the action dropdown live, before saving (user 2026-11-14)
+  const hints = await gm.evaluate(async () => {
+    const app = new foundry.applications.settings.SettingsConfig();
+    await app.render({ force: true });
+    const select = app.element.querySelector('select[name="idle-world-closer.action"]');
+    const hint = () => select?.closest(".form-group")?.querySelector(".hint")?.textContent?.trim();
+    const pick = (value) => {
+      select.value = value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      return hint();
+    };
+    const result = { close: pick("close"), logout: pick("logout"), back: pick("close") };
+    await app.close();
+    return result;
+  });
+  check(
+    /^If a Gamemaster is connected/.test(hints.close ?? "") &&
+      hints.logout === "All connected players are logged out." &&
+      hints.back === hints.close,
+    `(8b) action hint follows the dropdown: ${JSON.stringify(hints)}`,
+  );
+
   await setting(gm, "enabled", false);
   await p1.evaluate(() => game.settings.set("core", "language", "en"));
   for (const page of [gm, p1, p2]) await closeUser(page);

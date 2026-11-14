@@ -126,3 +126,12 @@ export function parseMessage(msg: unknown): Report | null {
   if (idleMs !== undefined && !(typeof idleMs === "number" && Number.isFinite(idleMs))) return null;
   return { type, userId, idleMs: Math.max(0, (idleMs as number | undefined) ?? 0) };
 }
+
+/** Settings whose hint follows the chosen end action (the action setting's own hint). */
+export const ACTION_HINT_SETTINGS = { action: "Action" } as const;
+
+/** The lang key of a setting's hint for the chosen end action ("close" or "logout"). */
+export function actionHintKey(setting: keyof typeof ACTION_HINT_SETTINGS, action: string): string {
+  const suffix = action === "logout" ? "HintLogout" : "Hint";
+  return `IDLE-WORLD-CLOSER.Settings.${ACTION_HINT_SETTINGS[setting]}.${suffix}`;
+}

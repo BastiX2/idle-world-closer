@@ -43,7 +43,10 @@ interface FoundryGame {
     emit(event: string, data: unknown): void;
     on(event: string, handler: (data: unknown) => void): void;
   };
-  readonly i18n: { format(key: string, data?: Record<string, unknown>): string };
+  readonly i18n: {
+    format(key: string, data?: Record<string, unknown>): string;
+    localize(key: string): string;
+  };
   /** Logs this client out and returns to the join screen. */
   logOut(): void;
 }
@@ -92,4 +95,5 @@ declare const game: FoundryGame;
 declare const foundry: FoundryNamespace;
 declare const Hooks: {
   once(hook: "init" | "ready", callback: () => void): void;
+  on(hook: "renderSettingsConfig", callback: (app: unknown, element: HTMLElement) => void): number;
 };

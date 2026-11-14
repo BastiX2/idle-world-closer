@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  actionHintKey,
   activeSince,
   allIdle,
   endAction,
@@ -164,5 +165,13 @@ describe("parseMessage", () => {
     ]) {
       expect(parseMessage(bad)).toBeNull();
     }
+  });
+});
+
+describe("actionHintKey", () => {
+  it("picks the close hint unless logout is chosen", () => {
+    expect(actionHintKey("action", "close")).toBe("IDLE-WORLD-CLOSER.Settings.Action.Hint");
+    expect(actionHintKey("action", "logout")).toBe("IDLE-WORLD-CLOSER.Settings.Action.HintLogout");
+    expect(actionHintKey("action", "")).toBe("IDLE-WORLD-CLOSER.Settings.Action.Hint");
   });
 });
