@@ -3,11 +3,11 @@
     "Settings": {
       "Enabled": {
         "Name": "Close idle worlds",
-        "Hint": "Master switch. Once all connected players have been idle long enough, a countdown starts and the world is closed afterwards."
+        "Hint": "Master switch. When every connected player has been idle long enough, a countdown starts and the world is closed afterwards."
       },
       "Minutes": {
         "Name": "Idle minutes",
-        "Hint": "Minutes without any input (mouse, keyboard, touch) from every connected user before the countdown starts."
+        "Hint": "Minutes without any input (mouse, keyboard, touch) from every connected player before the countdown starts."
       },
       "Countdown": {
         "Name": "Countdown seconds",
@@ -15,10 +15,10 @@
       },
       "Action": {
         "Name": "When the countdown ends",
-        "Hint": "If a Gamemaster is connected, the world is closed through them. Without a Gamemaster, all connected players are logged out (like Log Out).",
+        "Hint": "With a Gamemaster connected, the world is shut down via his client. Otherwise all connected players are signed out (matches logout).",
         "HintLogout": "All connected players are logged out.",
         "Close": "Close the world (return to setup)",
-        "Logout": "Only log everybody out"
+        "Logout": "Every connected player is signed out"
       }
     },
     "Dialog": {

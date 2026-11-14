@@ -325,7 +325,7 @@ async function runA(browser) {
     return result;
   });
   check(
-    /^If a Gamemaster is connected/.test(hints.close ?? "") &&
+    /^With a Gamemaster connected/.test(hints.close ?? "") &&
       hints.logout === "All connected players are logged out." &&
       hints.back === hints.close,
     `(8b) action hint follows the dropdown: ${JSON.stringify(hints)}`,
