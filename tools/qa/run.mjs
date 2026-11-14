@@ -311,7 +311,7 @@ async function runA(browser) {
 
   // The action hint follows the action dropdown live, before saving (user 2026-11-14)
   const hints = await gm.evaluate(async () => {
-    const app = new foundry.applications.settings.SettingsConfig();
+    const app = new globalThis.foundry.applications.settings.SettingsConfig();
     await app.render({ force: true });
     const select = app.element.querySelector('select[name="idle-world-closer.action"]');
     const hint = () => select?.closest(".form-group")?.querySelector(".hint")?.textContent?.trim();
