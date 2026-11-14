@@ -1,13 +1,10 @@
 {
   "IDLE-WORLD-CLOSER": {
     "Settings": {
-      "Enabled": {
-        "Name": "Close idle worlds",
-        "Hint": "Master switch. When every connected player has been idle long enough, a countdown starts and the world is closed afterwards."
-      },
       "Minutes": {
         "Name": "Idle minutes",
-        "Hint": "Minutes without any input (mouse, keyboard, touch) from every connected player before the countdown starts."
+        "Hint": "When every connected player has been idle long enough, a countdown starts and the world is closed afterwards. Minutes without any input (mouse, keyboard, touch) from every connected player before the countdown starts.",
+        "HintLogout": "When every connected player has been idle long enough, a countdown starts and all connected players are signed out afterwards. Minutes without any input (mouse, keyboard, touch) from every connected player before the countdown starts."
       },
       "Countdown": {
         "Name": "Countdown seconds",
@@ -24,7 +21,7 @@
     "Dialog": {
       "Title": "Still there?",
       "Body": "Nobody has been active for a while. The world closes in {seconds} seconds. Move the mouse or press any key to stay.",
-      "BodyLogout": "Nobody has been active for a while. Everyone is logged out in {seconds} seconds. Move the mouse or press any key to stay.",
+      "BodyLogout": "Nobody has been active for a while. Every player will be signed out in {seconds} seconds. Move the mouse or press any key to stay.",
       "Here": "I'm here"
     }
   }

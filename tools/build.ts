@@ -6,7 +6,9 @@ import * as esbuild from "esbuild";
 import fs from "node:fs";
 
 const watch = process.argv.includes("--watch");
-const STATIC = ["module.json", "lang", "LICENSE", "README.md", "CHANGELOG.md"];
+// No README/CHANGELOG in the package: shipped text must be human-written (Foundry AI policy);
+// GitHub shows both.
+const STATIC = ["module.json", "lang", "LICENSE"];
 
 function copyStatic(): void {
   for (const entry of STATIC) fs.cpSync(entry, `dist/${entry}`, { recursive: true });

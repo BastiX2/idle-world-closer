@@ -178,6 +178,13 @@ const noneShow =
     for (const p of pages) if (await shown(p)) return false;
     return true;
   };
+/** The module has no on/off setting (installed = on); QA pauses it through the hidden test setting. */
+const enabled = (page, on) =>
+  page.evaluate(
+    ([id, on]) =>
+      game.settings.set(id, "test", { ...(game.settings.get(id, "test") ?? {}), paused: !on }),
+    [MODULE, on],
+  );
 const setting = (page, key, value) =>
   page.evaluate(([id, k, v]) => game.settings.set(id, k, v), [MODULE, key, value]);
 const closeUser = (page) => page.context().close();
@@ -202,8 +209,7 @@ async function prepareWorld(browser) {
   );
   await gm.evaluate(
     async ([id, t]) => {
-      await game.settings.set(id, "enabled", false);
-      await game.settings.set(id, "test", t);
+      await game.settings.set(id, "test", { ...t, paused: true });
       const roles = { P1: 1, P2: 1, GM2: 4 };
       for (const [name, role] of Object.entries(roles)) {
         if (!game.users.getName(name)) await User.create({ name, role });
@@ -220,7 +226,7 @@ async function runA(browser) {
   let gm = await prepareWorld(browser);
   const p1 = await login(browser, "P1", { touch: true });
   await sleep(1000);
-  await setting(gm, "enabled", true);
+  await enabled(gm, true);
 
   check(
     !!(await until(bothShow(gm, p1), 30_000, "countdown on both")),
@@ -331,7 +337,7 @@ async function runA(browser) {
     `(8b) action hint follows the dropdown: ${JSON.stringify(hints)}`,
   );
 
-  await setting(gm, "enabled", false);
+  await enabled(gm, false);
   await p1.evaluate(() => game.settings.set("core", "language", "en"));
   for (const page of [gm, p1, p2]) await closeUser(page);
 }
@@ -345,8 +351,8 @@ async function runB(browser) {
 
 async function backgroundTabs(browser) {
   const gm = await login(browser, "Gamemaster");
-  await setting(gm, "enabled", false);
-  await setting(gm, "test", TEST_TIMINGS);
+  await enabled(gm, false);
+  await setting(gm, "test", { ...TEST_TIMINGS, paused: true });
   const players = [];
   for (const name of ["P1", "P2"]) {
     const page = await login(browser, name);
@@ -371,7 +377,7 @@ async function backgroundTabs(browser) {
     visibility.every((v) => v === "hidden"),
     "(9) the player tabs report being in the background",
   );
-  await setting(gm, "enabled", true);
+  await enabled(gm, true);
   await sleep(500);
   await closeUser(gm);
   check(
@@ -393,8 +399,8 @@ async function runC(browser) {
   console.log("--- C: two GMs");
   await restart();
   const gm = await login(browser, "Gamemaster");
-  await setting(gm, "enabled", false);
-  await setting(gm, "test", TEST_TIMINGS); // an earlier run may have left other timings behind
+  await enabled(gm, false);
+  await setting(gm, "test", { ...TEST_TIMINGS, paused: true }); // an earlier run may have left other timings behind
   const gm2 = await login(browser, "GM2");
   const posts = [];
   const errors = [];
@@ -415,7 +421,7 @@ async function runC(browser) {
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   }
-  await setting(gm, "enabled", true);
+  await enabled(gm, true);
   check(
     !!(await until(bothShow(gm, gm2), 30_000, "countdown")),
     "(10) two idle GMs: both see the countdown",
@@ -458,13 +464,13 @@ async function runD(browser) {
   console.log("--- D: real minimum (1 minute, 10 s)");
   await restart();
   const gm = await login(browser, "Gamemaster");
-  await setting(gm, "enabled", false);
+  await enabled(gm, false);
   const p1 = await login(browser, "P1");
-  await setting(gm, "test", {});
+  await setting(gm, "test", { paused: true });
   await setting(gm, "minutes", 1);
   await setting(gm, "countdown", 10);
   const t0 = Date.now();
-  await setting(gm, "enabled", true);
+  await enabled(gm, true);
   await sleep(40_000);
   check(
     !(await shown(gm)) && !(await shown(p1)),

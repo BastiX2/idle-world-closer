@@ -191,7 +191,7 @@ async function finish(): Promise<void> {
 
 function start(): void {
   stop();
-  if (!setting<boolean>("enabled")) return;
+  if (setting<TestOverride | null>("test")?.paused) return; // QA only; installed = on (user)
   lastOwnInput = Date.now();
   lastTick = lastOwnInput;
   listen(true);
@@ -210,14 +210,6 @@ Hooks.once("init", () => {
     if (game.ready) start();
   };
   const base = { scope: "world", requiresReload: false, onChange: restart } as const;
-  game.settings.register(ID, "enabled", {
-    ...base,
-    name: "IDLE-WORLD-CLOSER.Settings.Enabled.Name",
-    hint: "IDLE-WORLD-CLOSER.Settings.Enabled.Hint",
-    config: true,
-    type: Boolean,
-    default: true,
-  });
   game.settings.register(ID, "minutes", {
     ...base,
     name: "IDLE-WORLD-CLOSER.Settings.Minutes.Name",
@@ -268,8 +260,8 @@ Hooks.once("init", () => {
 });
 
 /**
- * In the settings window the action setting's hint follows its dropdown live, before saving
- * (the user's texts: one for closing the world, one for logging everybody out).
+ * In the settings window the hints of the minutes setting (the module's explanation) and of the
+ * action follow the action dropdown live, before saving (the user's texts for both actions).
  */
 function bindActionHints(root: HTMLElement): void {
   const select = root.querySelector<HTMLSelectElement>(`select[name="${ID}.action"]`);

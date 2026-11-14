@@ -173,5 +173,8 @@ describe("actionHintKey", () => {
     expect(actionHintKey("action", "close")).toBe("IDLE-WORLD-CLOSER.Settings.Action.Hint");
     expect(actionHintKey("action", "logout")).toBe("IDLE-WORLD-CLOSER.Settings.Action.HintLogout");
     expect(actionHintKey("action", "")).toBe("IDLE-WORLD-CLOSER.Settings.Action.Hint");
+    expect(actionHintKey("minutes", "logout")).toBe(
+      "IDLE-WORLD-CLOSER.Settings.Minutes.HintLogout",
+    );
   });
 });

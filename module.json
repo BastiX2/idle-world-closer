@@ -1,7 +1,7 @@
 {
   "id": "idle-world-closer",
   "title": "Idle World Closer",
-  "description": "Closes an idle world: when nobody has touched their keyboard or mouse for a while, everyone gets a countdown, then the GM's client shuts the world down (or players are logged out).",
+  "description": "<p>A small module that automatically signs out all idle players or even shuts down the game world directly when an idle Gamemaster is connected.</p><p>Players are warned before they are signed out or the world is shut down. Times are configurable via the module's settings.</p><p>Born out of my personal needs for my self-hosted Foundry server to shut down the game world when no one needs it.</p>",
   "version": "0.1.0",
   "compatibility": { "minimum": "14", "verified": "14" },
   "authors": [{ "name": "BastiX2" }],

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- No on/off switch any more: the module works whenever it is enabled in the world.
+- All UI texts and the package description are the author's own (German and English).
+- The settings hints follow the chosen end action live in the settings window.
+- The dialog says that any input cancels the countdown.
+- The package no longer ships README.md and CHANGELOG.md (both stay on GitHub).
+
 ## 0.1.0
 
 First version.

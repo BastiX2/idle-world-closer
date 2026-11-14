@@ -71,6 +71,8 @@ export interface TestOverride {
   thresholdSeconds?: number;
   countdownSeconds?: number;
   shareSeconds?: number;
+  /** QA only: the module stays idle (there is no user-facing switch any more). */
+  paused?: boolean;
 }
 
 /**
@@ -127,8 +129,8 @@ export function parseMessage(msg: unknown): Report | null {
   return { type, userId, idleMs: Math.max(0, (idleMs as number | undefined) ?? 0) };
 }
 
-/** Settings whose hint follows the chosen end action (the action setting's own hint). */
-export const ACTION_HINT_SETTINGS = { action: "Action" } as const;
+/** Settings whose hint follows the chosen end action (minutes: the explanation; action). */
+export const ACTION_HINT_SETTINGS = { minutes: "Minutes", action: "Action" } as const;
 
 /** The lang key of a setting's hint for the chosen end action ("close" or "logout"). */
 export function actionHintKey(setting: keyof typeof ACTION_HINT_SETTINGS, action: string): string {

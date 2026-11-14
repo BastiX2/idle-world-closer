@@ -22,11 +22,11 @@ who reconnects, cancels it.
 
 ## Settings
 
+There is no on/off switch: the module works whenever it is enabled in the world (Manage Modules).
 World settings, shown to the Gamemaster only (Configure Settings, Module Settings):
 
 | Setting                                                 | Default         |
 | ------------------------------------------------------- | --------------- |
-| Close idle worlds (master switch)                       | on              |
 | Idle minutes (1 to 720)                                 | 10              |
 | Countdown seconds (10 to 600)                           | 60              |
 | When the countdown ends: close the world / only log out | close the world |
@@ -75,14 +75,14 @@ that input happened. There is no telemetry and no external request.
 The module is written in TypeScript (`src/`, strict) and bundled with esbuild into one ES module. Foundry's
 installer never compiles anything, so the installed folder holds the built JavaScript only.
 
-| Command                                      | What it does                                                                                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm install`                                | Installs the (exactly pinned) dev dependencies                                                                                                          |
-| `npm run build` / `npm run build -- --watch` | Bundles `src/main.ts` into `dist/scripts/main.js` (+ source map) and copies `module.json`, `lang/`, `LICENSE`, `README.md`, `CHANGELOG.md` into `dist/` |
-| `npm run zip`                                | Writes `module.zip` from `dist/` (files at the zip root, `module.json` on top)                                                                          |
-| `npm run check`                              | `tsc --noEmit`, ESLint (typescript-eslint), Prettier, Vitest with coverage                                                                              |
-| `npm run qa`                                 | Headless Foundry with up to three clients on port 30600, using the built `dist/` (needs a local Foundry install and licence; own data folder)           |
-| `npm run release -- <version> [--dry-run]`   | Bumps the version in `module.json`, `package.json`, the lock file and the changelog, commits and tags `v<version>`; never pushes                        |
+| Command                                      | What it does                                                                                                                                  |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm install`                                | Installs the (exactly pinned) dev dependencies                                                                                                |
+| `npm run build` / `npm run build -- --watch` | Bundles `src/main.ts` into `dist/scripts/main.js` (+ source map) and copies `module.json`, `lang/` and `LICENSE` into `dist/`                 |
+| `npm run zip`                                | Writes `module.zip` from `dist/` (files at the zip root, `module.json` on top)                                                                |
+| `npm run check`                              | `tsc --noEmit`, ESLint (typescript-eslint), Prettier, Vitest with coverage                                                                    |
+| `npm run qa`                                 | Headless Foundry with up to three clients on port 30600, using the built `dist/` (needs a local Foundry install and licence; own data folder) |
+| `npm run release -- <version> [--dry-run]`   | Bumps the version in `module.json`, `package.json`, the lock file and the changelog, commits and tags `v<version>`; never pushes              |
 
 For a development install, build and link or copy `dist/` to `Data/modules/idle-world-closer` of your
 Foundry data folder (`--watch` keeps it current).

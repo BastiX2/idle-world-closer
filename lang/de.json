@@ -1,13 +1,10 @@
 {
   "IDLE-WORLD-CLOSER": {
     "Settings": {
-      "Enabled": {
-        "Name": "Leere Welt schließen",
-        "Hint": "Hauptschalter. Waren alle verbundenen Spieler lange genug untätig, startet ein Countdown, danach wird die Welt geschlossen."
-      },
       "Minutes": {
         "Name": "Minuten Untätigkeit",
-        "Hint": "Minuten ohne jede Eingabe (Maus, Tastatur, Touch) aller verbundenen Spieler, bevor der Countdown startet."
+        "Hint": "Waren alle verbundenen Spieler lange genug untätig, startet ein Countdown, danach wird die Welt geschlossen. Minuten ohne jede Eingabe (Maus, Tastatur, Touch) aller verbundenen Spieler, bevor der Countdown startet.",
+        "HintLogout": "Waren alle verbundenen Spieler lange genug untätig, startet ein Countdown, danach werden alle verbundenen Spieler abgemeldet. Minuten ohne jede Eingabe (Maus, Tastatur, Touch) aller verbundenen Spieler, bevor der Countdown startet."
       },
       "Countdown": {
         "Name": "Countdown in Sekunden",
@@ -24,7 +21,7 @@
     "Dialog": {
       "Title": "Noch da?",
       "Body": "Seit einiger Zeit war niemand aktiv. Die Welt wird in {seconds} Sekunden geschlossen. Eine Mausbewegung oder Taste genügt, um zu bleiben.",
-      "BodyLogout": "Seit einiger Zeit war niemand aktiv. Alle werden in {seconds} Sekunden abgemeldet. Eine Mausbewegung oder Taste genügt, um zu bleiben.",
+      "BodyLogout": "Seit einiger Zeit war niemand aktiv. Alle Spieler werden in {seconds} Sekunden abgemeldet. Eine Mausbewegung oder Taste genügt, um zu bleiben.",
       "Here": "Ich bin da"
     }
   }
