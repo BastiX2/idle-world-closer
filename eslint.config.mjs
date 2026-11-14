@@ -6,6 +6,9 @@ export default [
       sourceType: "module",
       globals: {
         game: "readonly",
+        User: "readonly",
+        CONST: "readonly",
+        localStorage: "readonly",
         foundry: "readonly",
         Hooks: "readonly",
         window: "readonly",
