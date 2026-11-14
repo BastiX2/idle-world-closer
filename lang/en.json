@@ -16,7 +16,7 @@
       "Action": {
         "Name": "When the countdown ends",
         "Hint": "With a Gamemaster connected, the world is shut down via his client. Otherwise all connected players are signed out (matches logout).",
-        "HintLogout": "All connected players are logged out.",
+        "HintLogout": "All connected players are signed out.",
         "Close": "Close the world (return to setup)",
         "Logout": "Every connected player is signed out"
       }
