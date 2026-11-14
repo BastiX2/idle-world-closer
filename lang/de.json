@@ -7,7 +7,7 @@
       },
       "Minutes": {
         "Name": "Minuten Untätigkeit",
-        "Hint": "Minuten ohne jede Eingabe (Maus, Tastatur, Touch) aller verbundenen Benutzer, bevor der Countdown startet."
+        "Hint": "Minuten ohne jede Eingabe (Maus, Tastatur, Touch) aller verbundenen Spieler, bevor der Countdown startet."
       },
       "Countdown": {
         "Name": "Countdown in Sekunden",
