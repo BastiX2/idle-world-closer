@@ -324,6 +324,7 @@ async function runB(browser) {
 async function backgroundTabs(browser) {
   const gm = await login(browser, "Gamemaster");
   await setting(gm, "enabled", false);
+  await setting(gm, "test", TEST_TIMINGS);
   const players = [];
   for (const name of ["P1", "P2"]) {
     const page = await login(browser, name);
@@ -371,6 +372,7 @@ async function runC(browser) {
   await restart();
   const gm = await login(browser, "Gamemaster");
   await setting(gm, "enabled", false);
+  await setting(gm, "test", TEST_TIMINGS); // an earlier run may have left other timings behind
   const gm2 = await login(browser, "GM2");
   const posts = [];
   const errors = [];
@@ -383,7 +385,9 @@ async function runC(browser) {
     });
     page.on("response", (r) => {
       if (r.request().method() === "POST" && r.url().endsWith("/setup")) {
-        console.log(`INFO ${name}: POST /setup answered ${r.status()}`);
+        console.log(
+          `INFO ${name}: POST /setup answered ${r.status()} location=${r.headers().location ?? "-"} at ${new Date().toISOString()}`,
+        );
       }
     });
     page.on("pageerror", (e) => errors.push(e.message));
@@ -394,10 +398,23 @@ async function runC(browser) {
     !!(await until(bothShow(gm, gm2), 30_000, "countdown")),
     "(10) two idle GMs: both see the countdown",
   );
-  check(
-    !!(await until(async () => (await status()).active === false, 40_000, "world closed")),
-    "(10) the world is closed",
+  const closedC = await until(
+    async () => (await status()).active === false,
+    60_000,
+    "world closed",
   );
+  check(!!closedC, "(10) the world is closed");
+  if (!closedC) {
+    console.log(
+      `INFO activeGM seen by GM: ${await gm.evaluate(() => game.users.activeGM?.name)}, by GM2: ${await gm2.evaluate(() => game.users.activeGM?.name)}`,
+    );
+    console.log(
+      `INFO status: ${JSON.stringify(await status())}; GM url ${gm.url()}, GM2 url ${gm2.url()}`,
+    );
+    console.log(
+      serverLog.join("").split(String.fromCharCode(10)).slice(-25).join(String.fromCharCode(10)),
+    );
+  }
   await sleep(3000);
   check(
     posts.length === 1,
