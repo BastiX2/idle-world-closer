@@ -42,7 +42,8 @@ export function bumpChangelog(text: string, version: string, date: string): stri
     throw new Error(`CHANGELOG.md already has an entry for ${version}`);
   }
   const heading = `## ${version} (${date})`;
-  if (/^## Unreleased\s*$/m.test(text)) return text.replace(/^## Unreleased\s*$/m, heading);
+  // [ \t]*, not \s*: \s would swallow the blank line after the heading (Prettier then fails in CI)
+  if (/^## Unreleased[ \t]*$/m.test(text)) return text.replace(/^## Unreleased[ \t]*$/m, heading);
   return text.replace(/^# Changelog\s*\n/, `# Changelog\n\n${heading}\n\n- \n\n`);
 }
 

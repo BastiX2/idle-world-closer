@@ -35,8 +35,8 @@ describe("release helpers", () => {
     expect(JSON.parse(bumpLock('{"version":"0.1.0"}', "0.2.0")).version).toBe("0.2.0");
   });
   it("updates the changelog", () => {
-    expect(bumpChangelog("# Changelog\n\n## Unreleased\n\n- a\n", "0.2.0", "2026-01-02")).toContain(
-      "## 0.2.0 (2026-01-02)",
+    expect(bumpChangelog("# Changelog\n\n## Unreleased\n\n- a\n", "0.2.0", "2026-01-02")).toBe(
+      "# Changelog\n\n## 0.2.0 (2026-01-02)\n\n- a\n", // the blank line after the heading stays
     );
     expect(bumpChangelog("# Changelog\n\n## 0.1.0\n", "0.2.0", "2026-01-02")).toMatch(
       /# Changelog\n\n## 0\.2\.0 \(2026-01-02\)\n\n- \n\n## 0\.1\.0/,
