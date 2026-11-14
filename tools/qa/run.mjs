@@ -131,8 +131,11 @@ async function stopServer() {
 const status = async () => (await fetch(`${BASE}/api/status`)).json();
 
 /** Logs a user in on a new browser context; returns its page. */
-async function login(browser, name) {
-  const context = await browser.newContext({ viewport: { width: 1000, height: 700 } });
+async function login(browser, name, { touch = false } = {}) {
+  const context = await browser.newContext({
+    viewport: { width: 1000, height: 700 },
+    hasTouch: touch,
+  });
   await context.addInitScript(() => {
     localStorage.setItem("core.tourProgress", '{"core":{"welcome":99}}');
     localStorage.setItem("core.performanceMode", "0");
@@ -162,10 +165,292 @@ async function login(browser, name) {
   return page;
 }
 
-const countdownVisible = (page) =>
-  page.evaluate(() => !!document.querySelector("dialog.idle-world-closer"));
+const shown = (page) => page.evaluate(() => !!document.querySelector("dialog.idle-world-closer"));
+const bothShow =
+  (...pages) =>
+  async () => {
+    for (const p of pages) if (!(await shown(p))) return false;
+    return true;
+  };
+const noneShow =
+  (...pages) =>
+  async () => {
+    for (const p of pages) if (await shown(p)) return false;
+    return true;
+  };
+const setting = (page, key, value) =>
+  page.evaluate(([id, k, v]) => game.settings.set(id, k, v), [MODULE, key, value]);
+const closeUser = (page) => page.context().close();
+
+/** A fresh server; the world (users, settings) is kept between runs. */
+async function restart() {
+  await stopServer();
+  await startServer();
+}
+
+/** First run only: enable the module, create the users, switch the module off while people log in. */
+async function prepareWorld(browser) {
+  const gm = await login(browser, "Gamemaster");
+  await gm.evaluate(async (id) => {
+    await game.settings.set("core", "moduleConfiguration", { [id]: true });
+  }, MODULE);
+  await gm.reload();
+  await gm.waitForFunction(() => globalThis.game?.ready === true, null, { timeout: 90_000 });
+  check(
+    await gm.evaluate((id) => !!game.modules.get(id)?.active, MODULE),
+    "module is active in the world",
+  );
+  await gm.evaluate(
+    async ([id, t]) => {
+      await game.settings.set(id, "enabled", false);
+      await game.settings.set(id, "test", t);
+      const roles = { P1: 1, P2: 1, GM2: 4 };
+      for (const [name, role] of Object.entries(roles)) {
+        if (!game.users.getName(name)) await User.create({ name, role });
+      }
+    },
+    [MODULE, TEST_TIMINGS],
+  );
+  return gm;
+}
+
+/** A: input types, join/leave during a countdown, setting change, German UI (GM + players). */
+async function runA(browser) {
+  console.log("--- A: input types, join, GM reconnect, setting change, German");
+  let gm = await prepareWorld(browser);
+  const p1 = await login(browser, "P1", { touch: true });
+  await sleep(1000);
+  await setting(gm, "enabled", true);
+
+  check(
+    !!(await until(bothShow(gm, p1), 30_000, "countdown on both")),
+    "(1) two idle users: both see the countdown",
+  );
+  const text = await gm.evaluate(
+    () => document.querySelector(".idle-world-closer .iwc-text")?.textContent ?? "",
+  );
+  check(/\d+/.test(text), `(1) countdown text names the seconds: "${text.trim()}"`);
+
+  const inputs = {
+    "mouse move": () => p1.mouse.move(100, 100).then(() => p1.mouse.move(150, 160)),
+    "pointer down": () => p1.mouse.down().then(() => p1.mouse.up()),
+    "key down": () => p1.keyboard.press("Shift"),
+    wheel: () => p1.mouse.wheel(0, 120),
+    "touch (real tap)": () => p1.touchscreen.tap(60, 60),
+    "touchstart (isolated event)": () =>
+      p1.evaluate(() => window.dispatchEvent(new Event("touchstart", { bubbles: true }))),
+  };
+  for (const [name, act] of Object.entries(inputs)) {
+    if (!(await until(bothShow(gm, p1), 40_000, `countdown before ${name}`))) {
+      check(false, `(2) ${name}: no countdown to cancel`);
+      continue;
+    }
+    await act();
+    const gone = await until(noneShow(gm, p1), 3000, `${name} cancels`);
+    check(!!gone, `(2) ${name} on P1 cancels the countdown on both clients`);
+  }
+  check((await status()).active === true, "(2) the world is still open after the cancels");
+
+  // A user who joins during a countdown cancels it (long countdown so the login fits)
+  await setting(gm, "test", { ...TEST_TIMINGS, countdownSeconds: 40 });
+  await until(bothShow(gm, p1), 30_000, "countdown (40 s)");
+  const p2 = await login(browser, "P2");
+  check(
+    !!(await until(noneShow(gm, p1), 5000, "join cancels")),
+    "(5) a user joining during a countdown cancels it",
+  );
+  check((await status()).active === true, "(5) the world is still open");
+
+  // The GM reconnects mid-countdown: the new session counts as activity
+  await until(bothShow(gm, p1, p2), 40_000, "countdown with three users");
+  await closeUser(gm);
+  gm = await login(browser, "Gamemaster");
+  check(
+    !!(await until(noneShow(gm, p1, p2), 8000, "GM reconnect cancels")),
+    "(6) the GM reconnecting mid-countdown cancels it for everybody",
+  );
+  check(
+    (await status()).active === true && /\/game$/.test(p1.url()) && /\/game$/.test(p2.url()),
+    "(6) nobody was logged out, the world is still open",
+  );
+
+  // A setting changed during a countdown cancels it everywhere
+  await until(bothShow(gm, p1, p2), 40_000, "countdown before the setting change");
+  await setting(gm, "action", "logout");
+  check(
+    !!(await until(noneShow(gm, p1, p2), 5000, "setting change cancels")),
+    "(7) changing a setting during a countdown cancels it on every client",
+  );
+  await setting(gm, "action", "close");
+
+  // German strings
+  await p1.evaluate(() => game.settings.set("core", "language", "de"));
+  await p1.reload();
+  await p1.waitForFunction(() => globalThis.game?.ready === true, null, { timeout: 90_000 });
+  await until(bothShow(p1), 60_000, "countdown on the German client");
+  const de = await p1.evaluate(() => ({
+    title: document.querySelector("dialog.idle-world-closer .window-title")?.textContent?.trim(),
+    text: document.querySelector("dialog.idle-world-closer .iwc-text")?.textContent?.trim(),
+    button: document
+      .querySelector("dialog.idle-world-closer button[data-action=here]")
+      ?.textContent?.trim(),
+  }));
+  check(de.title === "Noch da?", `(8) German title: "${de.title}"`);
+  check(
+    /^Seit einiger Zeit war niemand aktiv\. Die Welt wird in \d+ Sekunden geschlossen\.$/.test(
+      de.text ?? "",
+    ),
+    `(8) German text: "${de.text}"`,
+  );
+  check(de.button === "Ich bin da", `(8) German button: "${de.button}"`);
+  await until(bothShow(gm, p1), 30_000, "countdown on both after the German reload");
+  const en = await gm.evaluate(() =>
+    document.querySelector("dialog.idle-world-closer .window-title")?.textContent?.trim(),
+  );
+  check(en === "Still there?", `(8) the English client still shows "${en}"`);
+
+  await setting(gm, "enabled", false);
+  await p1.evaluate(() => game.settings.set("core", "language", "en"));
+  for (const page of [gm, p1, p2]) await closeUser(page);
+}
+
+/** B: players only, in tabs that are in the background: still counted, countdown and logout run. */
+async function runB(browser) {
+  console.log("--- B: players only, background tabs (visibility simulated)");
+  await restart();
+  await backgroundTabs(browser);
+}
+
+async function backgroundTabs(browser) {
+  const gm = await login(browser, "Gamemaster");
+  await setting(gm, "enabled", false);
+  const players = [];
+  for (const name of ["P1", "P2"]) {
+    const page = await login(browser, name);
+    // Playwright keeps every tab "visible" (focus emulation), so the page is told it is hidden.
+    // Real timer throttling of background tabs cannot be reproduced this way.
+    await page.evaluate(() => {
+      for (const [k, v] of [
+        ["visibilityState", "hidden"],
+        ["hidden", true],
+      ]) {
+        Object.defineProperty(document, k, { get: () => v, configurable: true });
+      }
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    players.push(page);
+  }
+  const visibility = await Promise.all(
+    players.map((p) => p.evaluate(() => document.visibilityState)),
+  );
+  console.log(`INFO visibilityState of the game tabs: ${visibility.join(", ")}`);
+  check(
+    visibility.every((v) => v === "hidden"),
+    "(9) the player tabs report being in the background",
+  );
+  await setting(gm, "enabled", true);
+  await sleep(500);
+  await closeUser(gm);
+  check(
+    !!(await until(bothShow(...players), 40_000, "countdown in hidden tabs")),
+    "(9) hidden tabs show the countdown",
+  );
+  const out = await until(
+    async () => players.every((p) => /\/join/.test(p.url())),
+    60_000,
+    "players logged out",
+  );
+  check(!!out, "(4) only players idle (hidden tabs): both are logged out");
+  check((await status()).active === true, "(4) the world stays open");
+  for (const p of players) await closeUser(p);
+}
+
+/** C: two GM clients idle: exactly one shutdown request. */
+async function runC(browser) {
+  console.log("--- C: two GMs");
+  await restart();
+  const gm = await login(browser, "Gamemaster");
+  await setting(gm, "enabled", false);
+  const gm2 = await login(browser, "GM2");
+  const posts = [];
+  const errors = [];
+  for (const [name, page] of [
+    ["GM", gm],
+    ["GM2", gm2],
+  ]) {
+    page.on("request", (r) => {
+      if (r.method() === "POST" && new URL(r.url()).pathname.endsWith("/setup")) posts.push(name);
+    });
+    page.on("response", (r) => {
+      if (r.request().method() === "POST" && r.url().endsWith("/setup")) {
+        console.log(`INFO ${name}: POST /setup answered ${r.status()}`);
+      }
+    });
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  }
+  await setting(gm, "enabled", true);
+  check(
+    !!(await until(bothShow(gm, gm2), 30_000, "countdown")),
+    "(10) two idle GMs: both see the countdown",
+  );
+  check(
+    !!(await until(async () => (await status()).active === false, 40_000, "world closed")),
+    "(10) the world is closed",
+  );
+  await sleep(3000);
+  check(
+    posts.length === 1,
+    `(10) exactly one client sent the shutdown request (${posts.join(", ") || "none"})`,
+  );
+  const real = errors.filter(
+    (e) => !/Failed to load resource|net::ERR|disconnected|socket/i.test(e),
+  );
+  check(
+    real.length === 0,
+    `(10) no errors on the two GM clients${real.length ? ": " + real[0] : ""}`,
+  );
+  await closeUser(gm);
+  await closeUser(gm2);
+}
+
+/** D: smoke test with the real minimum settings: 1 minute, 10 s countdown. */
+async function runD(browser) {
+  console.log("--- D: real minimum (1 minute, 10 s)");
+  await restart();
+  const gm = await login(browser, "Gamemaster");
+  await setting(gm, "enabled", false);
+  const p1 = await login(browser, "P1");
+  await setting(gm, "test", {});
+  await setting(gm, "minutes", 1);
+  await setting(gm, "countdown", 10);
+  const t0 = Date.now();
+  await setting(gm, "enabled", true);
+  await sleep(40_000);
+  check(
+    !(await shown(gm)) && !(await shown(p1)),
+    "(11) no countdown after 40 s of a 1-minute threshold",
+  );
+  const seen = await until(bothShow(gm, p1), 60_000, "countdown at 1 minute");
+  const t = (Date.now() - t0) / 1000;
+  check(
+    !!seen && t >= 55 && t <= 85,
+    `(11) countdown starts after about 1 minute (${t.toFixed(0)} s)`,
+  );
+  const closed = await until(async () => (await status()).active === false, 40_000, "world closed");
+  const t2 = (Date.now() - t0) / 1000;
+  check(
+    !!closed && t2 >= 63 && t2 <= 100,
+    `(11) the world closes after the 10 s countdown (${t2.toFixed(0)} s)`,
+  );
+  await closeUser(gm);
+  await closeUser(p1);
+}
 
 async function main() {
+  const wanted = process.argv.slice(2).map((x) => x.toUpperCase());
+  const runs = { A: runA, B: runB, C: runC, D: runD };
+  const names = wanted.length ? wanted : Object.keys(runs);
   setupData();
   await startServer();
   const browser = await chromium.launch({
@@ -173,85 +458,20 @@ async function main() {
     headless: process.env.QA_HEADED !== "1",
   });
   try {
-    // --- Setup: enable the module, create players, switch the module off while people log in
-    let gm = await login(browser, "Gamemaster");
-    await gm.evaluate(async (id) => {
-      await game.settings.set("core", "moduleConfiguration", { [id]: true });
-    }, MODULE);
-    await gm.reload();
-    await gm.waitForFunction(() => globalThis.game?.ready === true, null, { timeout: 90_000 });
-    const loaded = await gm.evaluate((id) => !!game.modules.get(id)?.active, MODULE);
-    check(loaded, "module is active in the world");
-    await gm.evaluate(
-      async ([id, t]) => {
-        await game.settings.set(id, "enabled", false);
-        await game.settings.set(id, "test", t);
-        for (const name of ["P1", "P2"]) {
-          if (!game.users.getName(name)) await User.create({ name, role: CONST.USER_ROLES.PLAYER });
-        }
-      },
-      [MODULE, TEST_TIMINGS],
-    );
-    const enable = (page, on) =>
-      page.evaluate(([id, v]) => game.settings.set(id, "enabled", v), [MODULE, on]);
-
-    // --- (1) + (2) + (3): GM and P1 idle
-    const p1 = await login(browser, "P1");
-    await sleep(1000);
-    await enable(gm, true);
-    const seenBoth = await until(
-      async () => (await countdownVisible(gm)) && (await countdownVisible(p1)),
-      30_000,
-      "countdown on both",
-    );
-    check(!!seenBoth, "(1) two idle users: both see the countdown");
-    const textOk = await gm.evaluate(
-      () => document.querySelector(".idle-world-closer .iwc-text")?.textContent ?? "",
-    );
-    check(/\d+/.test(textOk), `(1) countdown text names the seconds: "${textOk.trim()}"`);
-
-    await p1.mouse.move(100, 100);
-    await p1.mouse.move(150, 160);
-    const gone = await until(
-      async () => !(await countdownVisible(gm)) && !(await countdownVisible(p1)),
-      3000,
-      "countdown cancelled",
-    );
-    check(!!gone, "(2) input on P1 cancels the countdown on both clients");
-    await sleep(1500);
-    check((await status()).active === true, "(2) the world is still open after the cancel");
-
-    const closed = await until(
-      async () => (await status()).active === false,
-      40_000,
-      "world closed",
-    );
-    check(!!closed, "(3) GM + player idle: the world is closed (status active=false)");
-
-    // --- (4): players only
-    await gm.context().close();
-    await p1.context().close();
-    await stopServer();
-    await startServer();
-    gm = await login(browser, "Gamemaster");
-    await gm.evaluate(([id]) => game.settings.set(id, "enabled", false), [MODULE]);
-    const q1 = await login(browser, "P1");
-    const q2 = await login(browser, "P2");
-    await sleep(1000);
-    await enable(gm, true);
-    await sleep(500);
-    await gm.context().close(); // the GM leaves; only players stay
-    const out = await until(
-      async () => /\/join/.test(q1.url()) && /\/join/.test(q2.url()),
-      60_000,
-      "players logged out",
-    );
-    check(!!out, "(4) only players idle: both are logged out");
-    check((await status()).active === true, "(4) the world stays open");
+    for (const n of names) {
+      if (n !== "A" && n === names[0]) await prepareFirst(browser);
+      await runs[n](browser);
+    }
   } finally {
     await browser.close().catch(() => {});
     await stopServer();
   }
+}
+
+/** When A is not run first (filtering), the world still needs its module and users. */
+async function prepareFirst(browser) {
+  const gm = await prepareWorld(browser);
+  await closeUser(gm);
 }
 
 try {
