@@ -94,3 +94,37 @@ export function timings(settings, test) {
     shareMs: pos(t.shareSeconds, 60) * 1000,
   };
 }
+
+/**
+ * Longest gap between two one-second ticks that is still normal. Browsers throttle timers in
+ * background tabs (down to one run per minute after a while), so this must stay above a minute;
+ * a longer gap means the computer slept or the clock was set.
+ */
+export const MAX_TICK_GAP_MS = 120_000;
+
+/**
+ * Did the clock jump (laptop lid closed, system clock set) between two ticks? Idle times measured
+ * across such a jump mean nothing, so the caller restarts its bookkeeping instead of acting on them.
+ * @param {number} previousTick
+ * @param {number} now
+ * @param {number} [maxGapMs]
+ * @returns {boolean}
+ */
+export function isClockJump(previousTick, now, maxGapMs = MAX_TICK_GAP_MS) {
+  return now < previousTick || now - previousTick > maxGapMs;
+}
+
+/**
+ * Validates a socket message. Anything that is not a well-formed report (other module versions,
+ * other modules' payloads, garbage) yields null and is ignored.
+ * @param {unknown} msg
+ * @returns {{type:"state"|"active", userId:string, idleMs:number}|null}
+ */
+export function parseMessage(msg) {
+  if (!msg || typeof msg !== "object") return null;
+  const { type, userId, idleMs } = /** @type {Record<string, unknown>} */ (msg);
+  if (type !== "state" && type !== "active") return null;
+  if (typeof userId !== "string" || !userId) return null;
+  if (idleMs !== undefined && !(typeof idleMs === "number" && Number.isFinite(idleMs))) return null;
+  return { type, userId, idleMs: Math.max(0, idleMs ?? 0) };
+}

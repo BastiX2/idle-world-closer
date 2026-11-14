@@ -6,8 +6,10 @@
 import {
   allIdle,
   endAction,
+  isClockJump,
   isResume,
   lastInputFromReport,
+  parseMessage,
   secondsLeft,
   timings,
 } from "./decision.mjs";
@@ -24,6 +26,7 @@ const seen = new Map();
 let lastOwnInput = Date.now();
 let lastShare = 0;
 let lastEvent = 0;
+let lastTick = Date.now();
 let deadline = null;
 let dialog = null;
 let ticker = null;
@@ -63,8 +66,9 @@ function listen(on) {
   }
 }
 
-function onMessage(msg) {
-  if (!msg || typeof msg.userId !== "string" || msg.userId === game.user.id) return;
+function onMessage(raw) {
+  const msg = parseMessage(raw);
+  if (!msg || msg.userId === game.user.id || !game.users.has(msg.userId)) return;
   const now = Date.now();
   const entry = seen.get(msg.userId) ?? { lastInput: null, firstSeen: now };
   entry.lastInput = lastInputFromReport(now, msg.idleMs);
@@ -86,6 +90,17 @@ function connectedUsers(now) {
 
 function tick() {
   const now = Date.now();
+  const jumped = isClockJump(lastTick, now);
+  lastTick = now;
+  if (jumped) {
+    // The computer slept or the clock was set: idle times measured across that are meaningless.
+    // Start over as if everybody (including us) had just been seen, and tell the others.
+    seen.clear();
+    lastOwnInput = now;
+    cancel();
+    share("state");
+    return;
+  }
   const { thresholdMs, countdownMs, shareMs } = cfg();
   if (now - lastShare >= shareMs) share();
   const idle = allIdle(now, connectedUsers(now), thresholdMs);
@@ -146,17 +161,22 @@ async function finish() {
   });
   const d = dialog;
   dialog = null;
-  if (action === "close") {
+  if (action === "logout") {
+    game.logOut();
+    return;
+  }
+  d?.close({ animate: false }).catch(() => {});
+  if (action !== "close") return;
+  try {
     // The request `game.shutDown()` sends, without its "other users connected" confirmation
     await foundry.utils.fetchWithTimeout(foundry.utils.getRoute("setup"), {
       method: "POST",
       body: new URLSearchParams({ action: "worldShutdown" }),
       redirect: "manual",
     });
-  } else if (action === "logout") {
-    game.logOut();
-  } else {
-    d?.close({ animate: false }).catch(() => {});
+  } catch (err) {
+    // Still idle: the next tick starts a new countdown and tries again
+    console.error(`${ID} | closing the world failed`, err);
   }
 }
 
@@ -164,6 +184,7 @@ function start() {
   stop();
   if (!setting("enabled")) return;
   lastOwnInput = Date.now();
+  lastTick = lastOwnInput;
   listen(true);
   ticker = setInterval(tick, TICK_MS);
 }
