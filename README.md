@@ -1,54 +1,86 @@
 # Idle World Closer
 
-A small, system-agnostic module for Foundry VTT v14 that closes a world nobody is using any more, for
-people who host their own server and don't want a world running all night.
+A small, system-agnostic module for Foundry VTT v14 that closes a world nobody is using any more. It is
+meant for people who host their own server and don't want a world running all night because the last
+player forgot to log out.
 
 ## What it does
 
-Every client watches its own user's input (mouse movement or clicks anywhere in the window, keys,
-mouse wheel, touch) and tells the other clients how long it has been idle, once a minute and right
-after input resumes from a long pause.
+Every browser watches its own user's input (mouse movement or clicks anywhere in the window, keys, mouse
+wheel, touch). Foundry's own idle detection only notices map mouse moves, so someone typing in the chat or
+working on a sheet would look idle to it; here, any input counts.
 
-When **every** connected user has been idle for N minutes, every client shows a "Still there?"
-countdown. Any input on any client cancels it everywhere. If it runs out:
+When **every** connected user has been idle for the configured time, every client shows a "Still there?"
+countdown dialog. Any input on any client cancels it for everybody. If the countdown runs out:
 
-- with a Gamemaster connected, **one** GM client (`game.users.activeGM`) closes the world (the same
-  request as `game.shutDown()`, without its "other users are connected" prompt);
-- with only players connected, every client logs out (`game.logOut()`).
+- with a Gamemaster connected, that GM's client (one of them, if there are several) closes the world and
+  returns the server to the setup screen;
+- with only players connected, every client logs out.
 
-Nobody is ever logged out while anyone is active. A user whose idle time hasn't been received yet is
-not counted as idle until N minutes after they were first seen.
+Nobody is ever logged out or kicked while anyone is active. A user who joins during the countdown, or a GM
+who reconnects, cancels it.
 
-## Settings (world, GM only)
+## Settings
+
+World settings, shown to the Gamemaster only (Configure Settings, Module Settings):
 
 | Setting                                                 | Default         |
 | ------------------------------------------------------- | --------------- |
-| Close idle worlds (on/off)                              | on              |
-| Idle minutes                                            | 10              |
-| Countdown seconds                                       | 60              |
+| Close idle worlds (master switch)                       | on              |
+| Idle minutes (1 to 720)                                 | 10              |
+| Countdown seconds (10 to 600)                           | 60              |
 | When the countdown ends: close the world / only log out | close the world |
 
-## With a server watchdog
+Changing a setting while a countdown is running cancels the countdown on every client.
 
-Foundry's server only knows idle time in memory and counts little more than map mouse moves, so chat
-or sheet work looks idle to it. This module decides in the browsers instead. If your server runs a
-script that stops the world or the process when nobody is logged in, the "only log out" setting (or
-the no-GM case) lets that script do the closing.
+## Together with a server watchdog
+
+If you run your own server, you may already have (or want) a small script, for example a systemd timer or a
+cron job, that stops Foundry when nobody has been connected for a few minutes. This module pairs with it in
+two ways:
+
+- Leave it on **close the world**: the GM's client returns the server to setup, which frees the memory of
+  the world, while the Foundry process keeps running for the next session.
+- Choose **only log out**: everybody is disconnected, and your watchdog, which sees zero connected users,
+  stops the world or the whole service after its own grace period. The module never touches the server
+  itself.
+
+Either way the watchdog should wait a few minutes after the last user has left, so that a quick reload is
+not treated as an empty server.
 
 ## Limits
 
-- It needs at least one open browser to work. With no client connected there is nothing to count.
-- A tab in the background still counts as connected; if its user is away it simply becomes idle.
-- Clocks are never compared between machines (clients exchange "idle for X ms"), but a client whose
-  browser throttles timers heavily may react a few seconds late.
-- Closing the world needs a GM or server administrator account.
+- Players cannot close a world. Foundry only lets a Gamemaster (or the server administrator) do that, so
+  closing needs a GM connected when the countdown ends. With only players connected, they are logged out
+  and nothing else happens.
+- The module only runs in open browsers. With nobody connected there is nothing to count, so it does not
+  start a world, stop a server process or replace a real server-side watchdog.
+- Browsers slow down timers in tabs that have been in the background for a while (down to once a minute),
+  so in such a tab the countdown can end up to a minute late. Idle detection itself is not affected: a
+  background tab simply has no input.
+- A computer that was asleep (a closed laptop lid) or a clock that was set restarts the idle counting, so
+  waking up never closes a world on the spot.
+- A single idle browser tab with a Gamemaster logged in is enough to close the world, as designed: it is
+  the same as the GM being away.
+
+## Privacy
+
+The module sends nothing outside your world. The clients exchange "idle for so many seconds" and "someone
+is active" over the world's own socket, the one Foundry uses for everything else, and the module stores
+nothing except its settings. No input content (keys, positions) is read, recorded or sent; only the fact
+that input happened. There is no telemetry and no external request.
 
 ## Development
 
-`npm install`, `npm test` (Vitest with coverage for the decision logic), `npm run lint`,
-`npm run qa` (headless Foundry with two or three clients on port 30600; needs a local Foundry install).
+`npm install`, `npm test` (Vitest, with coverage for the decision logic), `npm run lint`, `npm run qa`
+(headless Foundry with up to three clients; needs a local Foundry install and a licence, uses its own data
+folder and port 30600).
 
-For tests, the hidden world setting `idle-world-closer.test` (`{ thresholdSeconds, countdownSeconds,
-shareSeconds }`) overrides the timings.
+For tests, the hidden world setting `idle-world-closer.test`
+(`{ thresholdSeconds, countdownSeconds, shareSeconds }`) overrides the timings.
+
+`npm run release -- <version>` bumps the version in `module.json`, `package.json` and the changelog, commits
+and tags `v<version>`; pushing the tag builds `module.zip` and publishes the release (see
+`.github/workflows/release.yml`).
 
 MIT licensed.
