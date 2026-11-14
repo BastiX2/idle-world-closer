@@ -9,6 +9,7 @@ export default [
         User: "readonly",
         CONST: "readonly",
         localStorage: "readonly",
+        Event: "readonly",
         foundry: "readonly",
         Hooks: "readonly",
         window: "readonly",

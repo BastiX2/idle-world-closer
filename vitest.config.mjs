@@ -3,6 +3,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["test/**/*.test.mjs"],
-    coverage: { provider: "v8", include: ["scripts/decision.mjs"], reporter: ["text"] },
+    coverage: {
+      provider: "v8",
+      include: ["scripts/decision.mjs", "tools/release-lib.mjs"],
+      reporter: ["text"],
+    },
   },
 });
