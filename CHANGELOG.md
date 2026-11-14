@@ -1,15 +1,16 @@
 # Changelog
 
-## Unreleased
-
-- A clock jump (computer asleep, clock set) restarts the idle counting instead of acting on stale times.
-- Socket messages are validated; unknown or malformed ones are ignored.
-- A failed shutdown request is logged and retried by the next countdown.
-- Release workflow (tag `v*` builds `module.zip`), `npm run release`, package URLs in `module.json`.
-
 ## 0.1.0
 
-- First version: per-client input tracking, shared over the module socket; countdown dialog when every
-  connected user is idle; the active GM's client closes the world, or everybody is logged out.
+First version.
+
+- Every client tracks its own input (mouse, keys, wheel, touch) and shares its idle time over the module
+  socket. When every connected user is idle, a "Still there?" countdown runs on all clients; any input
+  cancels it everywhere.
+- After the countdown the active GM's client closes the world (the request `game.shutDown()` sends), or
+  everybody is logged out when no GM is connected or "only log out" is chosen.
 - World settings: on/off, idle minutes, countdown seconds, close the world or only log out.
+- A clock jump (computer asleep, clock set) restarts the idle counting instead of acting on stale times;
+  socket messages are validated; a failed shutdown request is logged and retried by the next countdown.
 - English and German UI.
+- Written in TypeScript and built with esbuild into one ES module; releases ship the built `module.zip`.

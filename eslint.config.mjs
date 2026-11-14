@@ -1,29 +1,32 @@
-export default [
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  { ignores: ["dist/", "coverage/", "node_modules/", "tools/qa/ausgabe/"] },
+  js.configs.recommended,
+  ...tseslint.configs.strict,
   {
-    files: ["**/*.mjs"],
+    files: ["src/**/*.ts"],
+    rules: { "@typescript-eslint/no-explicit-any": "error" },
+  },
+  {
+    // The QA runner is plain JS; its page.evaluate callbacks use the browser's and Foundry's globals
+    files: ["tools/qa/*.mjs", "tools/qa/*.cjs"],
     languageOptions: {
-      ecmaVersion: 2024,
-      sourceType: "module",
       globals: {
         game: "readonly",
         User: "readonly",
         CONST: "readonly",
         localStorage: "readonly",
         Event: "readonly",
-        foundry: "readonly",
-        Hooks: "readonly",
         window: "readonly",
         document: "readonly",
-        URLSearchParams: "readonly",
-        setInterval: "readonly",
-        clearInterval: "readonly",
-        setTimeout: "readonly",
-        process: "readonly",
-        console: "readonly",
-        fetch: "readonly",
         URL: "readonly",
+        fetch: "readonly",
+        console: "readonly",
+        process: "readonly",
+        setTimeout: "readonly",
       },
     },
-    rules: { "no-unused-vars": "error", "no-undef": "error" },
   },
-];
+);

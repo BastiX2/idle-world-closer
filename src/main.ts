@@ -12,37 +12,43 @@ import {
   parseMessage,
   secondsLeft,
   timings,
-} from "./decision.mjs";
+  type TestOverride,
+  type UserState,
+} from "./decision.ts";
 
 const ID = "idle-world-closer";
 const SOCKET = `module.${ID}`;
 const TICK_MS = 1000;
 const THROTTLE_MS = 500;
 
-const loc = (key, data) => game.i18n.format(`IDLE-WORLD-CLOSER.${key}`, data ?? {});
+const loc = (key: string, data?: Record<string, unknown>): string =>
+  game.i18n.format(`IDLE-WORLD-CLOSER.${key}`, data ?? {});
 
-/** @type {Map<string, {lastInput:number|null, firstSeen:number}>} */
-const seen = new Map();
+type Seen = { lastInput: number | null; firstSeen: number };
+const seen = new Map<string, Seen>();
 let lastOwnInput = Date.now();
 let lastShare = 0;
 let lastEvent = 0;
 let lastTick = Date.now();
-let deadline = null;
-let dialog = null;
-let ticker = null;
+let deadline: number | null = null;
+let dialog: DialogV2Instance | null = null;
+let ticker: ReturnType<typeof setInterval> | null = null;
 let listening = false;
 
-const setting = (key) => game.settings.get(ID, key);
+const setting = <T>(key: string): T => game.settings.get(ID, key) as T;
 const cfg = () =>
-  timings({ minutes: setting("minutes"), countdownSeconds: setting("countdown") }, setting("test"));
+  timings(
+    { minutes: setting<number>("minutes"), countdownSeconds: setting<number>("countdown") },
+    setting<TestOverride | null>("test"),
+  );
 
 /** Sends this client's idle time (or an "active" cancel) to everybody else. */
-function share(type = "state") {
+function share(type: "state" | "active" = "state"): void {
   lastShare = Date.now();
   game.socket.emit(SOCKET, { type, userId: game.user.id, idleMs: Date.now() - lastOwnInput });
 }
 
-function onInput() {
+function onInput(): void {
   const now = Date.now();
   if (now - lastEvent < THROTTLE_MS) return;
   lastEvent = now;
@@ -56,39 +62,40 @@ function onInput() {
   }
 }
 
-function listen(on) {
+function listen(on: boolean): void {
   if (listening === on) return;
   listening = on;
-  const method = on ? "addEventListener" : "removeEventListener";
   const opts = { passive: true, capture: true };
   for (const type of ["mousemove", "pointerdown", "keydown", "wheel", "touchstart"]) {
-    window[method](type, onInput, opts);
+    if (on) window.addEventListener(type, onInput, opts);
+    else window.removeEventListener(type, onInput, opts);
   }
 }
 
-function onMessage(raw) {
+function onMessage(raw: unknown): void {
   const msg = parseMessage(raw);
   if (!msg || msg.userId === game.user.id || !game.users.has(msg.userId)) return;
   const now = Date.now();
-  const entry = seen.get(msg.userId) ?? { lastInput: null, firstSeen: now };
+  const entry: Seen = seen.get(msg.userId) ?? { lastInput: null, firstSeen: now };
   entry.lastInput = lastInputFromReport(now, msg.idleMs);
   seen.set(msg.userId, entry);
   if (msg.type === "active" && deadline !== null) cancel();
 }
 
 /** Keeps `seen` in line with the connected users and returns them as decision input. */
-function connectedUsers(now) {
+function connectedUsers(now: number): UserState[] {
   const active = game.users.filter((u) => u.active);
   const ids = new Set(active.map((u) => u.id));
   for (const id of seen.keys()) if (!ids.has(id)) seen.delete(id);
   return active.map((u) => {
     if (u.id === game.user.id) return { id: u.id, lastInput: lastOwnInput, firstSeen: now };
-    if (!seen.has(u.id)) seen.set(u.id, { lastInput: null, firstSeen: now });
-    return { id: u.id, ...seen.get(u.id) };
+    const entry = seen.get(u.id) ?? { lastInput: null, firstSeen: now };
+    seen.set(u.id, entry);
+    return { id: u.id, ...entry };
   });
 }
 
-function tick() {
+function tick(): void {
   const now = Date.now();
   const jumped = isClockJump(lastTick, now);
   lastTick = now;
@@ -109,18 +116,18 @@ function tick() {
   } else if (!idle) {
     cancel();
   } else if (now >= deadline) {
-    finish();
+    void finish();
   } else {
     updateDialog(now);
   }
 }
 
-function dialogText(now) {
-  const key = setting("action") === "logout" ? "Dialog.BodyLogout" : "Dialog.Body";
-  return loc(key, { seconds: secondsLeft(now, deadline) });
+function dialogText(now: number): string {
+  const key = setting<string>("action") === "logout" ? "Dialog.BodyLogout" : "Dialog.Body";
+  return loc(key, { seconds: secondsLeft(now, deadline ?? now) });
 }
 
-function startCountdown(end) {
+function startCountdown(end: number): void {
   deadline = end;
   const { DialogV2 } = foundry.applications.api;
   dialog = new DialogV2({
@@ -137,25 +144,25 @@ function startCountdown(end) {
     ],
     submit: () => {},
   });
-  dialog.render({ force: true });
+  void dialog.render({ force: true });
 }
 
-function updateDialog(now) {
+function updateDialog(now: number): void {
   const p = dialog?.element?.querySelector(".iwc-text");
   if (p) p.textContent = dialogText(now);
 }
 
-function cancel() {
+function cancel(): void {
   deadline = null;
   const d = dialog;
   dialog = null;
   d?.close({ animate: false }).catch(() => {});
 }
 
-async function finish() {
+async function finish(): Promise<void> {
   deadline = null;
   const action = endAction({
-    closeWorld: setting("action") !== "logout",
+    closeWorld: setting<string>("action") !== "logout",
     activeGmId: game.users.activeGM?.id ?? null,
     selfId: game.user.id,
   });
@@ -180,25 +187,27 @@ async function finish() {
   }
 }
 
-function start() {
+function start(): void {
   stop();
-  if (!setting("enabled")) return;
+  if (!setting<boolean>("enabled")) return;
   lastOwnInput = Date.now();
   lastTick = lastOwnInput;
   listen(true);
   ticker = setInterval(tick, TICK_MS);
 }
 
-function stop() {
-  clearInterval(ticker);
+function stop(): void {
+  if (ticker !== null) clearInterval(ticker);
   ticker = null;
   listen(false);
   cancel();
 }
 
 Hooks.once("init", () => {
-  const restart = () => game.ready && start();
-  const base = { scope: "world", requiresReload: false, onChange: restart };
+  const restart = (): void => {
+    if (game.ready) start();
+  };
+  const base = { scope: "world", requiresReload: false, onChange: restart } as const;
   game.settings.register(ID, "enabled", {
     ...base,
     name: "IDLE-WORLD-CLOSER.Settings.Enabled.Name",

@@ -6,7 +6,7 @@
  * Needs: a local Foundry install (FOUNDRY_APP), a Foundry licence in %LOCALAPPDATA%/FoundryVTT/Config,
  * Playwright's Chromium (`npx playwright-core install chromium`).
  */
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -71,9 +71,9 @@ function setupData() {
       compatibility: compat,
     }),
   );
-  for (const f of ["module.json", "scripts", "lang"]) {
-    fs.cpSync(path.join(REPO, f), path.join(DATA, "Data/modules", MODULE, f), { recursive: true });
-  }
+  // The module as built (what a release ships), not the sources
+  execFileSync(process.execPath, ["tools/build.ts"], { cwd: REPO, stdio: "inherit" });
+  fs.cpSync(path.join(REPO, "dist"), path.join(DATA, "Data/modules", MODULE), { recursive: true });
   fs.writeFileSync(
     path.join(DATA, "Data/worlds", WORLD, "world.json"),
     JSON.stringify({

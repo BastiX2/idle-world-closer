@@ -1,3 +1,5 @@
 node_modules/
 coverage/
 tools/qa/ausgabe/
+dist/
+module.zip

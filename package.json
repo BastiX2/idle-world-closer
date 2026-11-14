@@ -5,17 +5,27 @@
   "type": "module",
   "description": "Foundry VTT v14 module that closes an idle world",
   "scripts": {
-    "test": "vitest run --coverage",
+    "build": "node tools/build.ts",
+    "zip": "node tools/zip.ts",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --check .",
+    "test": "vitest run --coverage",
+    "check": "npm run typecheck && npm run lint && npm run format && npm test",
     "qa": "node tools/qa/run.mjs",
-    "release": "node tools/release.mjs"
+    "release": "node tools/release.ts"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.0.0",
-    "eslint": "^9.0.0",
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.1.0",
+    "esbuild": "0.28.2",
+    "eslint": "10.15.0",
+    "fflate": "0.8.3",
     "playwright-core": "1.64.1",
-    "prettier": "^3.0.0",
-    "vitest": "^4.0.0"
+    "prettier": "3.10.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vitest": "5.1.0"
   }
 }

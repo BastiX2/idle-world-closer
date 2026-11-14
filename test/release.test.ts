@@ -6,7 +6,7 @@ import {
   bumpModuleJson,
   isNewer,
   isVersion,
-} from "../tools/release-lib.mjs";
+} from "../tools/release-lib.ts";
 
 describe("release helpers", () => {
   it("validates versions", () => {

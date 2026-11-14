@@ -72,15 +72,27 @@ that input happened. There is no telemetry and no external request.
 
 ## Development
 
-`npm install`, `npm test` (Vitest, with coverage for the decision logic), `npm run lint`, `npm run qa`
-(headless Foundry with up to three clients; needs a local Foundry install and a licence, uses its own data
-folder and port 30600).
+The module is written in TypeScript (`src/`, strict) and bundled with esbuild into one ES module. Foundry's
+installer never compiles anything, so the installed folder holds the built JavaScript only.
 
-For tests, the hidden world setting `idle-world-closer.test`
-(`{ thresholdSeconds, countdownSeconds, shareSeconds }`) overrides the timings.
+| Command                                      | What it does                                                                                                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm install`                                | Installs the (exactly pinned) dev dependencies                                                                                                          |
+| `npm run build` / `npm run build -- --watch` | Bundles `src/main.ts` into `dist/scripts/main.js` (+ source map) and copies `module.json`, `lang/`, `LICENSE`, `README.md`, `CHANGELOG.md` into `dist/` |
+| `npm run zip`                                | Writes `module.zip` from `dist/` (files at the zip root, `module.json` on top)                                                                          |
+| `npm run check`                              | `tsc --noEmit`, ESLint (typescript-eslint), Prettier, Vitest with coverage                                                                              |
+| `npm run qa`                                 | Headless Foundry with up to three clients on port 30600, using the built `dist/` (needs a local Foundry install and licence; own data folder)           |
+| `npm run release -- <version> [--dry-run]`   | Bumps the version in `module.json`, `package.json`, the lock file and the changelog, commits and tags `v<version>`; never pushes                        |
 
-`npm run release -- <version>` bumps the version in `module.json`, `package.json` and the changelog, commits
-and tags `v<version>`; pushing the tag builds `module.zip` and publishes the release (see
-`.github/workflows/release.yml`).
+For a development install, build and link or copy `dist/` to `Data/modules/idle-world-closer` of your
+Foundry data folder (`--watch` keeps it current).
+
+The decision logic (`src/decision.ts`) has no Foundry dependency and is unit tested; `src/foundry.d.ts` declares
+only the parts of the Foundry v14 API the module calls. For tests, the hidden world setting
+`idle-world-closer.test` (`{ thresholdSeconds, countdownSeconds, shareSeconds }`) overrides the timings.
+
+Releasing: `npm run release -- 0.2.0`, then `git push origin main v0.2.0`. The workflow
+(`.github/workflows/release.yml`) runs the checks, builds, zips and publishes `module.zip` and `module.json`
+as a release.
 
 MIT licensed.

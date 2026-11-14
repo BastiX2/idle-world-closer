@@ -2,24 +2,19 @@
 
 export const REPO_URL = "https://github.com/BastiX2/idle-world-closer";
 
-/** @param {string} v */
-export const isVersion = (v) => /^\d+\.\d+\.\d+$/.test(v);
+export const isVersion = (v: string): boolean => /^\d+\.\d+\.\d+$/.test(v);
 
 /**
  * Sets the version in a JSON file's text, keeping its formatting.
- * @param {string} text
- * @param {string} version
  */
-export function bumpJson(text, version) {
+export function bumpJson(text: string, version: string): string {
   return text.replace(/("version":\s*")[^"]+(")/, `$1${version}$2`);
 }
 
 /**
  * module.json: the version and the download URL of the tag's zip.
- * @param {string} text
- * @param {string} version
  */
-export function bumpModuleJson(text, version) {
+export function bumpModuleJson(text: string, version: string): string {
   return bumpJson(text, version).replace(
     /("download":\s*")[^"]*(")/,
     `$1${REPO_URL}/releases/download/v${version}/module.zip$2`,
@@ -28,11 +23,12 @@ export function bumpModuleJson(text, version) {
 
 /**
  * package-lock.json: the project's own version (top level and the root package entry).
- * @param {string} text
- * @param {string} version
  */
-export function bumpLock(text, version) {
-  const data = JSON.parse(text);
+export function bumpLock(text: string, version: string): string {
+  const data = JSON.parse(text) as {
+    version?: string;
+    packages?: Record<string, { version?: string }>;
+  };
   data.version = version;
   if (data.packages?.[""]) data.packages[""].version = version;
   return `${JSON.stringify(data, null, 2)}\n`;
@@ -40,11 +36,8 @@ export function bumpLock(text, version) {
 
 /**
  * CHANGELOG.md: turns an "## Unreleased" heading into the version, or adds an empty entry.
- * @param {string} text
- * @param {string} version
- * @param {string} date  YYYY-MM-DD
  */
-export function bumpChangelog(text, version, date) {
+export function bumpChangelog(text: string, version: string, date: string): string {
   if (new RegExp(`^## ${version.replaceAll(".", "\\.")}\\b`, "m").test(text)) {
     throw new Error(`CHANGELOG.md already has an entry for ${version}`);
   }
@@ -55,12 +48,10 @@ export function bumpChangelog(text, version, date) {
 
 /**
  * Is `next` a higher version than `current`?
- * @param {string} current
- * @param {string} next
  */
-export function isNewer(current, next) {
+export function isNewer(current: string, next: string): boolean {
   const a = current.split(".").map(Number);
   const b = next.split(".").map(Number);
-  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return b[i] > a[i];
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return (b[i] ?? 0) > (a[i] ?? 0);
   return false;
 }

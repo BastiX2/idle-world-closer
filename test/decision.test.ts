@@ -10,7 +10,7 @@ import {
   parseMessage,
   secondsLeft,
   timings,
-} from "../scripts/decision.mjs";
+} from "../src/decision.ts";
 
 const MIN = 60_000;
 
@@ -145,7 +145,7 @@ describe("parseMessage", () => {
     });
   });
   it("clamps negative idle times", () => {
-    expect(parseMessage({ type: "state", userId: "u", idleMs: -9 }).idleMs).toBe(0);
+    expect(parseMessage({ type: "state", userId: "u", idleMs: -9 })?.idleMs).toBe(0);
   });
   it("ignores everything else", () => {
     for (const bad of [

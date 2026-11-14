@@ -12,7 +12,7 @@
   "bugs": "https://github.com/BastiX2/idle-world-closer/issues",
   "readme": "https://github.com/BastiX2/idle-world-closer/blob/main/README.md",
   "changelog": "https://github.com/BastiX2/idle-world-closer/blob/main/CHANGELOG.md",
-  "esmodules": ["scripts/main.mjs"],
+  "esmodules": ["scripts/main.js"],
   "languages": [
     { "lang": "en", "name": "English", "path": "lang/en.json" },
     { "lang": "de", "name": "Deutsch", "path": "lang/de.json" }
