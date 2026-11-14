@@ -1,7 +1,6 @@
 # Changelog
 
-## Unreleased
-
+## 0.1.1 (2026-11-14)
 - No on/off switch any more: the module works whenever it is enabled in the world.
 - All UI texts and the package description are the author's own (German and English).
 - The settings hints follow the chosen end action live in the settings window.
