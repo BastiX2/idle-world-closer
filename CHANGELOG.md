@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 (2026-11-19)
 
 - First stable release, for the package listing on foundryvtt.com. No functional changes since 0.1.1.
 

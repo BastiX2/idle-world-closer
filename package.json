@@ -1,6 +1,6 @@
 {
   "name": "idle-world-closer",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Foundry VTT v14 module that closes an idle world",
