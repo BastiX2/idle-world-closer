@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- First stable release, for the package listing on foundryvtt.com. No functional changes since 0.1.1.
+
 ## 0.1.1 (2026-11-14)
 
 - No on/off switch any more: the module works whenever it is enabled in the world.
