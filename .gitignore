@@ -3,3 +3,4 @@ coverage/
 tools/qa/ausgabe/
 dist/
 module.zip
+.foundry-release-token
